@@ -3,34 +3,11 @@ use reqwest::header;
 // use std::io::{self, Read, Write};
 use std::str;
 use std::io::{Read, Write};
-use tokio::io::{self, AsyncWriteExt, BufReader, AsyncBufReadExt};
+use tokio::io::{self, AsyncWriteExt, BufReader, AsyncReadExt};
 use tokio::net::TcpListener;
 use tokio::net::TcpStream;
 use tokio::select;
 
-// fn copy(reader: &mut dyn Read, writer: &mut dyn Write, output: &str, first: bool) {
-//     const BUFFER_SIZE: usize = 32 * 1024;
-//     let mut buf = [0u8; BUFFER_SIZE];
-
-//     if first {
-//         let mut header_str = format!("POST / HTTP/1.1\n");
-//         header_str += format!("Host: {}\n", output).as_str();
-//         header_str += format!("User-Agent: kurumi-proxy\n").as_str();
-//         header_str += format!("Accept: */*\n").as_str();
-//         header_str += format!("Content-Type: application/x-www-form-urlencoded\n").as_str();
-
-//         let mut header_buf: [u8; 256] = [0x23; 256];
-//         header_str.as_bytes().read(&mut header_buf);
-
-//         writer.write(&header_buf);
-//     }
-//     while let Ok(n) = reader.read(&mut buf) {
-//         if n == 0 {
-//             break;
-//         }
-//         let _ = writer.write(&buf[..n]);
-//     }
-// }
 
 fn header(host: &str) -> [u8; 256] {
     let mut header_str = format!("POST / HTTP/1.1\n");
@@ -70,25 +47,38 @@ async fn proxy(input: &str, output: &str) -> io::Result<()> {
     }
 }
 
+
 async fn kurumi_cracker(input: &str, output: &str) -> io::Result<()> {
     let listener = TcpListener::bind(input).await?;
     loop {
         let (client, _) = listener.accept().await?;
         let server = TcpStream::connect(output).await?;
 
-        let mut stream = BufReader::new(client);
-        let mut buffer = String::new();
-        for i in 0..4 {
-            stream.read_line(&mut buffer).await.unwrap();
-            println!("{}", buffer);
-        }
+        // let mut stream = BufReader::new(client);
+        // let mut buffer = String::new();
+        // for i in 0..4 {
+        //     stream.read_line(&mut buffer).await.unwrap();
+        //     println!("{}", buffer);
+        // }
 
         let (mut client_read, mut client_write) = client.into_split();
         let (mut server_read, mut server_write) = server.into_split();
 
+        let mut buffer = vec![0; 256];
+        client_read.read_exact(&mut buffer).await?;
 
         let client_to_server = tokio::spawn(async move {
             io::copy(&mut client_read, &mut server_write).await
+            // let mut buf = vec![0; 1024];
+
+            // loop {
+            //     match client_read.read(&mut buf).await {
+            //         Ok(0) => return,
+            //         Ok(n) => {
+            //             if server.write_all()
+            //         }
+            //     }
+            // }
         });
         let server_to_client = tokio::spawn(async move {
             io::copy(&mut server_read, &mut client_write).await
