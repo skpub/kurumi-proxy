@@ -50,16 +50,10 @@ async fn proxy(input: &str, output: &str) -> io::Result<()> {
 
 async fn kurumi_cracker(input: &str, output: &str) -> io::Result<()> {
     let listener = TcpListener::bind(input).await?;
+    println!("listen on: {}", input);
     loop {
         let (client, _) = listener.accept().await?;
         let server = TcpStream::connect(output).await?;
-
-        // let mut stream = BufReader::new(client);
-        // let mut buffer = String::new();
-        // for i in 0..4 {
-        //     stream.read_line(&mut buffer).await.unwrap();
-        //     println!("{}", buffer);
-        // }
 
         let (mut client_read, mut client_write) = client.into_split();
         let (mut server_read, mut server_write) = server.into_split();
