@@ -22,6 +22,18 @@ fn header(host: &str) -> [u8; 256] {
     return header_buf;
 }
 
+fn response_header() ->[u8; 256] {
+    let mut header_str = format!("HTTP/1.1 200 OK");
+    header_str += format!("Server: kurumi_cracker").as_str();
+    header_str += format!("Connection: Keep-Alive").as_str();
+    header_str += format!("Content-Type: text/html").as_str();
+    let mut header_buf: [u8; 256] = [0x20; 256];
+    let mut _ptr_header_buf: &mut[u8] = &mut header_buf;
+    _ptr_header_buf.write(header_str.as_bytes()).unwrap();
+
+    return header_buf;
+}
+
 async fn proxy(input: &str, output: &str) -> io::Result<()> {
     let listener = TcpListener::bind(input).await?;
     loop {
@@ -30,6 +42,9 @@ async fn proxy(input: &str, output: &str) -> io::Result<()> {
 
         let (mut client_read, mut client_write) = client.into_split();
         let (mut server_read, mut server_write) = server.into_split();
+
+        let mut buffer = vec![0; 256];
+        server_read.read_exact(&mut buffer).await?;
 
         server_write.write_all(&header(output)).await?;
 
@@ -57,6 +72,8 @@ async fn kurumi_cracker(input: &str, output: &str) -> io::Result<()> {
 
         let (mut client_read, mut client_write) = client.into_split();
         let (mut server_read, mut server_write) = server.into_split();
+
+        client_write.write_all(&response_header()).await?;
 
         let mut buffer = vec![0; 256];
         client_read.read_exact(&mut buffer).await?;
