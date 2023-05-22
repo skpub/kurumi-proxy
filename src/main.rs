@@ -56,8 +56,8 @@ async fn proxy(input: &str, output: &str) -> io::Result<()> {
         });
 
         select!(
-            _ = client_to_server => println!("c2s done."),
-            _ = server_to_client => println!("s2c done."),
+            _ = client_to_server => println!("[FIN] client to server."),
+            _ = server_to_client => println!("[FIN] server to client."),
         )
     }
 }
@@ -80,24 +80,14 @@ async fn kurumi_cracker(input: &str, output: &str) -> io::Result<()> {
 
         let client_to_server = tokio::spawn(async move {
             io::copy(&mut client_read, &mut server_write).await
-            // let mut buf = vec![0; 1024];
-
-            // loop {
-            //     match client_read.read(&mut buf).await {
-            //         Ok(0) => return,
-            //         Ok(n) => {
-            //             if server.write_all()
-            //         }
-            //     }
-            // }
         });
         let server_to_client = tokio::spawn(async move {
             io::copy(&mut server_read, &mut client_write).await
         });
 
         select!(
-            _ = client_to_server => println!("c2s done."),
-            _ = server_to_client => println!("s2c done."),
+            _ = client_to_server => println!("[FIN] client to server."),
+            _ = server_to_client => println!("[FIN] server to client."),
         )
     }
 }
